@@ -1,0 +1,25 @@
+server:
+  port: 8080
+
+rtlsdr:
+  # Set to 0 (or device index) to open on startup; -1 = manual open via REST
+  device-index: -1
+
+  # rtl_tcp-compatible TCP server
+  tcp-port: 6218
+  tcp-auto-start: true
+
+  # Initial tuner settings (applied when the device is opened)
+  initial-frequency-hz: 100000000       # 100 MHz
+  initial-sample-rate-hz: 2048000       # 2.048 Msps — standard SDR rate
+  initial-gain-tenths-db: -1              # -1 = auto-gain
+
+  # librtlsdr async transfer buffers
+  # 0 = use librtlsdr defaults (32 buffers × 16384 bytes each)
+  async-buffer-count: 0
+  async-buffer-length-bytes: 0
+
+#logging:
+#  level:
+#    org.tauasa.apps.rtlsdr: DEBUG
+#    root: INFO

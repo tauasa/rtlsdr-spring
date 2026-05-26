@@ -1,0 +1,226 @@
+# rtlsdr-spring
+
+A **Java 21 / Spring Boot 3** implementation of `rtl_tcp` — control your RTL-SDR
+dongle over a REST API, WebSocket IQ stream, and the original rtl\_tcp wire protocol,
+all from one JVM process.
+
+---
+
+## Architecture
+
+```
+┌─────────────────────────────────────────────────────┐
+│                   Spring Boot App                   │
+│                                                     │
+│  ┌──────────────┐   ┌──────────────────────────┐    │
+│  │  REST API    │   │  rtl_tcp TCP Server      │    │
+│  │  :8080/api   │   │  :1234  (rtl_tcp compat) │    │
+│  └──────┬───────┘   └────────────┬─────────────┘    │
+│         │                        │                  │
+│  ┌──────▼────────────────────────▼──────────────┐   │
+│  │            RtlSdrService                     │   │
+│  │   (JNA → librtlsdr → RTL2832U USB device)    │   │
+│  └──────────────────────┬───────────────────────┘   │
+│                         │ IQ data                   │
+│  ┌──────────────────────▼───────────────────────┐   │
+│  │  WebSocket /ws/iq  (binary IQ frames)        │   │
+│  └──────────────────────────────────────────────┘   │
+└─────────────────────────────────────────────────────┘
+```
+
+---
+
+## Prerequisites
+
+### 1. Install librtlsdr
+
+**Linux (Debian/Ubuntu)**
+```bash
+sudo apt install librtlsdr-dev rtl-sdr
+# Blacklist the default DVB kernel driver so librtlsdr owns the USB device
+echo 'blacklist dvb_usb_rtl28xxu' | sudo tee /etc/modprobe.d/rtlsdr.conf
+sudo modprobe -r dvb_usb_rtl28xxu
+```
+
+**macOS (Homebrew)**
+```bash
+brew install librtlsdr
+```
+
+**Windows**
+1. Install [Zadig](https://zadig.akeo.ie/) and replace the device driver with WinUSB.
+2. Download `rtlsdr.dll` from the [osmocom release](https://ftp.osmocom.org/binaries/windows/rtl-sdr/) and place it next to the JAR.
+
+### 2. Java 21
+
+```bash
+java -version   # must be 21+
+```
+
+---
+
+## Build & Run
+
+```bash
+./mvnw clean package -DskipTests
+java -jar target/rtlsdr-spring-1.0.0.jar
+```
+
+Or via Spring Boot Maven plugin:
+```bash
+./mvnw spring-boot:run
+```
+
+### Open a device on startup
+
+Edit `application.yml`:
+```yaml
+rtlsdr:
+  device-index: 0          # open device 0 automatically
+  tcp-auto-start: true     # bind :1234 on startup
+```
+
+---
+
+## REST API
+
+All endpoints return JSON. Base URL: `http://localhost:8080/api`
+
+| Method | Path | Description |
+|--------|------|-------------|
+| `GET`  | `/devices` | List all attached RTL-SDR dongles |
+| `GET`  | `/device/state` | Full state snapshot |
+| `POST` | `/device/open` | Open device `{"index":0}` |
+| `POST` | `/device/close` | Close device |
+| `PUT`  | `/device/frequency` | Set center freq `{"hz":100000000}` |
+| `PUT`  | `/device/sample-rate` | Set sample rate `{"hz":2048000}` |
+| `PUT`  | `/device/gain` | Set manual gain `{"tenthsDb":200}` (20.0 dB) |
+| `PUT`  | `/device/gain-mode` | Auto/manual `{"enabled":true}` |
+| `PUT`  | `/device/agc` | RTL2832 AGC `{"enabled":false}` |
+| `PUT`  | `/device/freq-correction` | PPM `{"ppm":0}` |
+| `PUT`  | `/device/direct-sampling` | Mode 0/1/2 `{"mode":0}` |
+| `PUT`  | `/device/offset-tuning` | `{"enabled":false}` |
+| `PUT`  | `/device/bias-tee` | `{"enabled":false}` |
+| `PUT`  | `/device/bandwidth` | IF bandwidth Hz `{"hz":0}` (0=auto) |
+| `POST` | `/device/stream/start` | Begin IQ streaming |
+| `POST` | `/device/stream/stop` | Stop streaming |
+| `GET`  | `/tcp/status` | TCP server state |
+| `POST` | `/tcp/start` | Start TCP server |
+| `POST` | `/tcp/stop` | Stop TCP server |
+
+### Quick example (curl)
+
+```bash
+# List devices
+curl http://localhost:8080/api/devices
+
+# Open device 0
+curl -s -X POST http://localhost:8080/api/device/open \
+  -H 'Content-Type: application/json' -d '{"index":0}'
+
+# Tune to NOAA weather radio (162.400 MHz)
+curl -s -X PUT http://localhost:8080/api/device/frequency \
+  -H 'Content-Type: application/json' -d '{"hz":162400000}'
+
+# Start streaming
+curl -s -X POST http://localhost:8080/api/device/stream/start
+```
+
+---
+
+## rtl\_tcp Protocol (port 1234)
+
+Connect any `rtl_tcp`-aware client (SDR#, GQRX, SDR++, GNU Radio) to
+`localhost:1234`. The server speaks the identical binary protocol:
+
+1. **On connect**: server sends 12-byte dongle-info header  
+   `'R','T','L','0'` + tuner-type (4 B BE) + gain-count (4 B BE)
+2. **Server → client**: continuous raw IQ bytes (unsigned 8-bit, offset 128)
+3. **Client → server**: 5-byte command packets `[cmd_id (1B)][param (4B BE)]`
+
+| Cmd | ID | Parameter |
+|-----|----|-----------|
+| SET_FREQUENCY | 0x01 | Hz (uint32) |
+| SET_SAMPLE_RATE | 0x02 | Hz (uint32) |
+| SET_GAIN_MODE | 0x03 | 0=auto, 1=manual |
+| SET_GAIN | 0x04 | tenths dB |
+| SET_FREQ_CORRECTION | 0x05 | PPM |
+| SET_IF_STAGE_GAIN | 0x06 | hi-byte=stage, lo-word=gain |
+| SET_AGC_MODE | 0x08 | 0/1 |
+| SET_DIRECT_SAMPLING | 0x09 | 0/1/2 |
+| SET_OFFSET_TUNING | 0x0A | 0/1 |
+| SET_TUNER_GAIN_INDEX | 0x0D | index into gain table |
+| SET_BIAS_TEE | 0x0E | 0/1 |
+
+---
+
+## WebSocket IQ Stream (`/ws/iq`)
+
+Connect with any WebSocket client. Frames are **binary** and contain the same
+raw IQ bytes as the TCP stream.
+
+```javascript
+// Browser example
+const ws = new WebSocket('ws://localhost:8080/ws/iq');
+ws.binaryType = 'arraybuffer';
+ws.onmessage = (e) => {
+  const samples = new Uint8Array(e.data);
+  // samples[0] = I₀, samples[1] = Q₀, samples[2] = I₁, …
+  // Convert to float: (sample - 127.5) / 127.5
+};
+```
+
+---
+
+## IQ Sample Format
+
+All IQ data follows the standard RTL-SDR convention:
+
+- **8-bit unsigned** per component
+- **Offset binary**: 0x00 = –1.0, 0x7F = 0.0, 0xFF = +1.0
+- **Interleaved**: `[I₀, Q₀, I₁, Q₁, …]`
+
+Convert to normalized float:
+```java
+double i = (sample[n]     & 0xFF) / 127.5 - 1.0;
+double q = (sample[n + 1] & 0xFF) / 127.5 - 1.0;
+```
+
+---
+
+## Configuration Reference
+
+```yaml
+rtlsdr:
+  device-index: -1               # -1 = manual open; 0+ = auto-open
+  tcp-port: 1234                 # rtl_tcp compatible port
+  tcp-auto-start: true           # bind on startup
+  initial-frequency-hz: 100000000
+  initial-sample-rate-hz: 2048000
+  initial-gain-tenths-db: -1    # -1 = auto-gain
+  async-buffer-count: 0          # 0 = librtlsdr default (32)
+  async-buffer-length-bytes: 0   # 0 = librtlsdr default (16384)
+```
+
+---
+
+## Troubleshooting
+
+**`UnsatisfiedLinkError: librtlsdr`**  
+The shared library is not on the JVM's native library path. Either install the OS
+package or pass `-Djna.library.path=/path/to/lib` to the JVM.
+
+**Device opens but no samples arrive**  
+Make sure the kernel DVB driver is blacklisted (Linux) or WinUSB is installed (Windows).
+
+**`No RTL-SDR devices found`**  
+Try running with `sudo` on Linux; or add a udev rule:  
+```
+echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", MODE="0664", GROUP="plugdev"' \
+  | sudo tee /etc/udev/rules.d/20-rtlsdr.rules
+sudo udevadm control --reload
+```
+
+**Frequency out of range**  
+Minimum ~24 MHz, maximum ~1766 MHz (hardware-dependent). Direct-sampling mode
+extends coverage to HF for V3 dongles.
