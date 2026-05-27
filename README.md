@@ -8,25 +8,7 @@ all from one JVM process.
 
 ## Architecture
 
-```
-┌─────────────────────────────────────────────────────┐
-│                   Spring Boot App                   │
-│                                                     │
-│  ┌──────────────┐   ┌──────────────────────────┐    │
-│  │  REST API    │   │  rtl_tcp TCP Server      │    │
-│  │  :8080/api   │   │  :1234  (rtl_tcp compat) │    │
-│  └──────┬───────┘   └────────────┬─────────────┘    │
-│         │                        │                  │
-│  ┌──────▼────────────────────────▼──────────────┐   │
-│  │            RtlSdrService                     │   │
-│  │   (JNA → librtlsdr → RTL2832U USB device)    │   │
-│  └──────────────────────┬───────────────────────┘   │
-│                         │ IQ data                   │
-│  ┌──────────────────────▼───────────────────────┐   │
-│  │  WebSocket /ws/iq  (binary IQ frames)        │   │
-│  └──────────────────────────────────────────────┘   │
-└─────────────────────────────────────────────────────┘
-```
+![Alt text](architecture.png)
 
 ---
 
@@ -62,13 +44,13 @@ java -version   # must be 21+
 ## Build & Run
 
 ```bash
-./mvnw clean package -DskipTests
+mvn clean package
 java -jar target/rtlsdr-spring-1.0.0.jar
 ```
 
 Or via Spring Boot Maven plugin:
 ```bash
-./mvnw spring-boot:run
+mvn spring-boot:run
 ```
 
 ### Open a device on startup
@@ -77,7 +59,7 @@ Edit `application.yml`:
 ```yaml
 rtlsdr:
   device-index: 0          # open device 0 automatically
-  tcp-auto-start: true     # bind :1234 on startup
+  tcp-auto-start: true     # bind :6218 on startup
 ```
 
 ---
@@ -128,10 +110,10 @@ curl -s -X POST http://localhost:8080/api/device/stream/start
 
 ---
 
-## rtl\_tcp Protocol (port 1234)
+## rtl\_tcp Protocol (port 6218)
 
 Connect any `rtl_tcp`-aware client (SDR#, GQRX, SDR++, GNU Radio) to
-`localhost:1234`. The server speaks the identical binary protocol:
+`localhost:6218`. The server speaks the identical binary protocol:
 
 1. **On connect**: server sends 12-byte dongle-info header  
    `'R','T','L','0'` + tuner-type (4 B BE) + gain-count (4 B BE)
@@ -193,7 +175,7 @@ double q = (sample[n + 1] & 0xFF) / 127.5 - 1.0;
 ```yaml
 rtlsdr:
   device-index: -1               # -1 = manual open; 0+ = auto-open
-  tcp-port: 1234                 # rtl_tcp compatible port
+  tcp-port: 6218                 # rtl_tcp compatible port
   tcp-auto-start: true           # bind on startup
   initial-frequency-hz: 100000000
   initial-sample-rate-hz: 2048000
