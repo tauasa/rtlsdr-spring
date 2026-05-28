@@ -47,6 +47,10 @@ java -version   # must be 21+
 mvn clean package
 java -jar target/rtlsdr-spring-1.0.0.jar
 ```
+If you receive an `Unsatisfied link error` you can specify the path to the `librtlsdr` library
+```
+java -Djna.library.path=/opt/homebrew/lib -jar target/rtlsdr-spring-1.0.0.jar
+```
 
 Or via Spring Boot Maven plugin:
 ```bash
