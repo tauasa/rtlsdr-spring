@@ -1,5 +1,7 @@
 package org.tauasa.apps.rtlsdr.jna;
 
+import org.tauasa.apps.rtlsdr.model.TunerType;
+
 import com.sun.jna.Callback;
 import com.sun.jna.Library;
 import com.sun.jna.Native;
@@ -24,7 +26,27 @@ import com.sun.jna.ptr.PointerByReference;
  */
 public interface RtlSdrLibrary extends Library {
 
-    RtlSdrLibrary INSTANCE = Native.load("rtlsdr", RtlSdrLibrary.class);
+    /**
+     * Lazy holder — {@code Native.load} is deferred until first access.
+     * This prevents an {@link UnsatisfiedLinkError} from crashing the Spring
+     * context on machines where librtlsdr is not installed.
+     */
+    final class Holder {
+        public static final RtlSdrLibrary INSTANCE;
+        public static final Throwable     LOAD_ERROR;
+        static {
+            RtlSdrLibrary lib = null;
+            Throwable     err = null;
+            try {
+                lib = Native.load("rtlsdr", RtlSdrLibrary.class);
+            } catch (Throwable t) {
+                err = t;
+            }
+            INSTANCE   = lib;
+            LOAD_ERROR = err;
+        }
+        private Holder() {}
+    }
 
     // -------------------------------------------------------------------------
     // Device enumeration

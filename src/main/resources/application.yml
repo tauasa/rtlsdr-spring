@@ -1,12 +1,18 @@
 server:
-  port: 8080
+  port: 8080 # 8443 when SSL is enabled
+  ssl:
+    enabled: false                          # flip to true once certificate is in place
+    key-store: classpath:keystore.p12       # or file:/path/to/keystore.p12
+    key-store-password: changeit
+    key-store-type: PKCS12
+    key-alias: rtlsdr-spring
 
 rtlsdr:
   # Set to 0 (or device index) to open on startup; -1 = manual open via REST
-  device-index: -1
+  device-index: 0   
 
   # rtl_tcp-compatible TCP server
-  tcp-port: 6218
+  tcp-port: 1234
   tcp-auto-start: true
 
   # Initial tuner settings (applied when the device is opened)
@@ -19,7 +25,7 @@ rtlsdr:
   async-buffer-count: 0
   async-buffer-length-bytes: 0
 
-#logging:
-#  level:
-#    org.tauasa.apps.rtlsdr: DEBUG
-#    root: INFO
+logging:
+  level:
+    org.tauasa.apps.rtlsdr: DEBUG
+    root: INFO

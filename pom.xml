@@ -60,12 +60,12 @@
       <artifactId>spring-boot-starter-validation</artifactId>
     </dependency>
 
-    <!-- Lombok — boilerplate reduction 
+    <!-- Lombok — boilerplate reduction -->
     <dependency>
       <groupId>org.projectlombok</groupId>
       <artifactId>lombok</artifactId>
       <optional>true</optional>
-    </dependency-->
+    </dependency>
 
     <!-- Test -->
     <dependency>

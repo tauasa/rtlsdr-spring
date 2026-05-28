@@ -12,7 +12,7 @@ public record RtlSdrProperties(
         /** Index of the RTL-SDR device to open on startup (or -1 to stay closed). */
         int deviceIndex,
 
-        /** TCP port to bind the rtl_tcp-compatible server on. Default 6218. */
+        /** TCP port to bind the rtl_tcp-compatible server on. Default 1234. */
         int tcpPort,
 
         /** Whether to start the TCP server automatically. */
@@ -39,7 +39,7 @@ public record RtlSdrProperties(
 ) {
     /** Canonical defaults mirroring rtl_tcp behaviour. */
     public RtlSdrProperties {
-        if (tcpPort            <= 0)  tcpPort            = 6218;
+        if (tcpPort            <= 0)  tcpPort            = 1234;
         if (initialFrequencyHz <= 0)  initialFrequencyHz = 100_000_000L; // 100 MHz
         if (initialSampleRateHz<= 0)  initialSampleRateHz= 2_048_000L;   // 2.048 Msps
     }

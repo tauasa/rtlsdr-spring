@@ -42,7 +42,7 @@ public class RtlSdrService {
 
     private static final Logger log = LoggerFactory.getLogger(RtlSdrService.class);
 
-    private final RtlSdrLibrary         lib   = RtlSdrLibrary.INSTANCE;
+    private final RtlSdrLibrary         lib;
     private final RtlSdrProperties      props;
     private final ReentrantLock         lock  = new ReentrantLock();
     private final AtomicBoolean         streaming = new AtomicBoolean(false);
@@ -76,6 +76,15 @@ public class RtlSdrService {
 
     public RtlSdrService(RtlSdrProperties props) {
         this.props = props;
+        if (RtlSdrLibrary.Holder.LOAD_ERROR != null) {
+            log.warn("librtlsdr not found — SDR hardware unavailable. " +
+                     "Install librtlsdr-dev (Linux), brew install librtlsdr (macOS), " +
+                     "or place rtlsdr.dll next to the JAR (Windows). " +
+                     "Cause: {}", RtlSdrLibrary.Holder.LOAD_ERROR.getMessage());
+            this.lib = null;
+        } else {
+            this.lib = RtlSdrLibrary.Holder.INSTANCE;
+        }
     }
 
     // =========================================================================
@@ -84,6 +93,7 @@ public class RtlSdrService {
 
     /** Lists all RTL-SDR devices currently attached to the system. */
     public List<DeviceInfo> listDevices() {
+        if (lib == null) return List.of();
         int count = lib.rtlsdr_get_device_count();
         List<DeviceInfo> result = new ArrayList<>(count);
         for (int i = 0; i < count; i++) {
@@ -492,6 +502,7 @@ public class RtlSdrService {
     }
 
     private void requireOpen() {
+        if (lib == null)    throw new IllegalStateException("librtlsdr not loaded — check startup warnings");
         if (device == null) throw new IllegalStateException("No device open");
     }
 

@@ -59,7 +59,7 @@ Edit `application.yml`:
 ```yaml
 rtlsdr:
   device-index: 0          # open device 0 automatically
-  tcp-auto-start: true     # bind :6218 on startup
+  tcp-auto-start: true     # bind :1234 on startup
 ```
 
 ---
@@ -110,10 +110,10 @@ curl -s -X POST http://localhost:8080/api/device/stream/start
 
 ---
 
-## rtl\_tcp Protocol (port 6218)
+## rtl\_tcp Protocol (port 1234)
 
 Connect any `rtl_tcp`-aware client (SDR#, GQRX, SDR++, GNU Radio) to
-`localhost:6218`. The server speaks the identical binary protocol:
+`localhost:1234`. The server speaks the identical binary protocol:
 
 1. **On connect**: server sends 12-byte dongle-info header  
    `'R','T','L','0'` + tuner-type (4 B BE) + gain-count (4 B BE)
@@ -175,7 +175,7 @@ double q = (sample[n + 1] & 0xFF) / 127.5 - 1.0;
 ```yaml
 rtlsdr:
   device-index: -1               # -1 = manual open; 0+ = auto-open
-  tcp-port: 6218                 # rtl_tcp compatible port
+  tcp-port: 1234                 # rtl_tcp compatible port
   tcp-auto-start: true           # bind on startup
   initial-frequency-hz: 100000000
   initial-sample-rate-hz: 2048000
@@ -191,6 +191,9 @@ rtlsdr:
 **`UnsatisfiedLinkError: librtlsdr`**  
 The shared library is not on the JVM's native library path. Either install the OS
 package or pass `-Djna.library.path=/path/to/lib` to the JVM.
+
+Example:
+>`java -Djna.library.path=/opt/homebrew/lib -jar target/rtlsdr-spring-1.0.0.jar`
 
 **Device opens but no samples arrive**  
 Make sure the kernel DVB driver is blacklisted (Linux) or WinUSB is installed (Windows).
