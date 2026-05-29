@@ -47,10 +47,6 @@ java -version   # must be 21+
 mvn clean package
 java -jar target/rtlsdr-spring-1.0.0.jar
 ```
-If you receive an `Unsatisfied link error` you can specify the path to the `librtlsdr` library
-```
-java -Djna.library.path=/opt/homebrew/lib -jar target/rtlsdr-spring-1.0.0.jar
-```
 
 Or via Spring Boot Maven plugin:
 ```bash
@@ -183,7 +179,7 @@ rtlsdr:
   tcp-auto-start: true           # bind on startup
   initial-frequency-hz: 100000000
   initial-sample-rate-hz: 2048000
-  initial-gain-tenths-db: -1    # -1 = auto-gain
+  initial-gain-tenths-db: -1     # -1 = auto-gain
   async-buffer-count: 0          # 0 = librtlsdr default (32)
   async-buffer-length-bytes: 0   # 0 = librtlsdr default (16384)
 ```
@@ -192,17 +188,27 @@ rtlsdr:
 
 ## Troubleshooting
 
-**`UnsatisfiedLinkError: librtlsdr`**  
+#### `UnsatisfiedLinkError: librtlsdr`
 The shared library is not on the JVM's native library path. Either install the OS
 package or pass `-Djna.library.path=/path/to/lib` to the JVM.
 
-Example:
->`java -Djna.library.path=/opt/homebrew/lib -jar target/rtlsdr-spring-1.0.0.jar`
+Examples:
 
-**Device opens but no samples arrive**  
+```bash
+# Apple Silicon Mac (brew)
+java -Djna.library.path=/opt/homebrew/lib -jar rtlsdr-spring-1.0.0.jar
+
+# Intel Mac (brew)
+java -Djna.library.path=/usr/local/lib -jar rtlsdr-spring-1.0.0.jar
+
+# Linux custom build location
+java -Djna.library.path=/usr/local/lib -jar rtlsdr-spring-1.0.0.jar
+```
+
+#### Device opens but no samples arrive
 Make sure the kernel DVB driver is blacklisted (Linux) or WinUSB is installed (Windows).
 
-**`No RTL-SDR devices found`**  
+#### No RTL-SDR devices found
 Try running with `sudo` on Linux; or add a udev rule:  
 ```
 echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", MODE="0664", GROUP="plugdev"' \
@@ -210,6 +216,6 @@ echo 'SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", MODE="0664", GROUP="plugdev"' \
 sudo udevadm control --reload
 ```
 
-**Frequency out of range**  
+#### Frequency out of range 
 Minimum ~24 MHz, maximum ~1766 MHz (hardware-dependent). Direct-sampling mode
 extends coverage to HF for V3 dongles.
