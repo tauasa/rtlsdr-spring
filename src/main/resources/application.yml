@@ -7,6 +7,11 @@ server:
     key-store-type: PKCS12
     key-alias: rtlsdr-spring
 
+spring:
+  mvc:
+    cors:
+      allowed-origins: "*"
+      
 rtlsdr:
   # Set to 0 (or device index) to open on startup; -1 = manual open via REST
   device-index: 0   
