@@ -53,6 +53,32 @@ Or via Spring Boot Maven plugin:
 mvn spring-boot:run
 ```
 
+Or via the bash startup script:
+```bash
+# Start app in the foreground (CRTRL-C to quit)
+./rtlsdr-spring.sh
+```
+Other startup script options
+
+```bash
+./rtlsdr-spring.sh             Start in foreground (Ctrl+C to stop)
+./rtlsdr-spring.sh start       Start in background
+./rtlsdr-spring.sh stop        Graceful shutdown
+./rtlsdr-spring.sh restart     Stop then start
+./rtlsdr-spring.sh status      Show running state and PID
+./rtlsdr-spring.sh log [N]     Tail log file (default last 50 lines)
+
+Environment variables:
+JAVA_HOME         Java installation directory
+RTLSDR_JAR        Path to the JAR (default: ./target/rtlsdr-spring-1.0.0.jar)
+RTLSDR_LIB_DIR    Path to librtlsdr directory (default: OS search path)
+RTLSDR_LOG_DIR    Log directory (default: /var/log/rtlsdr-spring)RTLSDR_PID_FILE   PID file path (default: /var/run/rtlsdr-spring.pid)
+SPRING_PROFILE    Spring active profile (default: default)
+JVM_XMS           JVM initial heap (default: 64m)
+JVM_XMX           JVM max heap (default: 256m)
+EXTRA_JVM_OPTS    Additional JVM flags
+```
+
 ### Open a device on startup
 
 Edit `application.yml`:
