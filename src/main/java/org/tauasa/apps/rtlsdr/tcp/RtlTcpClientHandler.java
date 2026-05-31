@@ -1,10 +1,5 @@
 package org.tauasa.apps.rtlsdr.tcp;
 
-import org.tauasa.apps.rtlsdr.model.SdrState;
-import org.tauasa.apps.rtlsdr.service.RtlSdrService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import java.io.DataInputStream;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -14,6 +9,11 @@ import java.util.concurrent.LinkedBlockingQueue;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.Consumer;
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.tauasa.apps.rtlsdr.model.SdrState;
+import org.tauasa.apps.rtlsdr.service.RtlSdrService;
 
 /**
  * Handles a single connected rtl_tcp client.
@@ -66,6 +66,9 @@ public class RtlTcpClientHandler implements Runnable {
     @Override
     public void run() {
         try {
+            if(log.isTraceEnabled())
+                log.trace("{}: Client connected", socket.getRemoteSocketAddress());
+                
             socket.setTcpNoDelay(true);
             OutputStream out = socket.getOutputStream();
 
@@ -78,6 +81,9 @@ public class RtlTcpClientHandler implements Runnable {
             out.write(header);
             out.flush();
 
+            if(log.isTraceEnabled())
+                log.trace("{}: Header: {}, Center Freq: {}", socket.getRemoteSocketAddress(), new String(header), state.centerFreqHz()); // header is ASCII text
+
             // 2. Register as an IQ consumer
             iqConsumer = data -> {
                 if (!writeQueue.offer(data)) {
@@ -89,8 +95,12 @@ public class RtlTcpClientHandler implements Runnable {
 
             // 3. Start IQ streaming if not already running
             if (!sdrService.isStreaming()) {
+                if(log.isTraceEnabled())
+                    log.trace("{}: Starting streaming...", socket.getRemoteSocketAddress());
                 sdrService.startStreaming();
             }
+            if(log.isTraceEnabled())
+                log.trace("{}: Client streaming", socket.getRemoteSocketAddress());
 
             // 4. Spin up write thread
             Thread writeThread = new Thread(
@@ -98,18 +108,25 @@ public class RtlTcpClientHandler implements Runnable {
             writeThread.setDaemon(true);
             writeThread.start();
 
+            if(log.isTraceEnabled())
+                log.trace("{}: Write thread started", socket.getRemoteSocketAddress());
+
             // 5. Read 5-byte command packets until EOF
             DataInputStream in = new DataInputStream(socket.getInputStream());
             while (active.get()) {
                 int cmd   = in.read();            // blocks
-                if (cmd == -1) break;             // EOF / client disconnected
+                if (cmd == -1){ // EOF / client disconnected
+                    if(log.isTraceEnabled())
+                        log.trace("{}: Client disconnected", socket.getRemoteSocketAddress());
+                    break;
+                }
                 int param = in.readInt();         // 4-byte big-endian
                 handleCommand(cmd & 0xFF, param);
             }
 
         } catch (IOException e) {
             if (active.get()) {
-                log.debug("Client I/O error: {}", e.getMessage());
+                log.warn("{}: Client I/O error: {}", socket.getRemoteSocketAddress(), e.getMessage());
             }
         } finally {
             cleanup();
@@ -131,7 +148,7 @@ public class RtlTcpClientHandler implements Runnable {
                 }
             }
         } catch (IOException e) {
-            if (active.get()) log.debug("Write loop error: {}", e.getMessage());
+            if (active.get()) log.debug("{}: Write loop error: {}", socket.getRemoteSocketAddress(), e.getMessage());
         } catch (InterruptedException e) {
             Thread.currentThread().interrupt();
         } finally {
@@ -140,7 +157,7 @@ public class RtlTcpClientHandler implements Runnable {
     }
 
     private void handleCommand(int cmd, int param) {
-        log.debug("TCP command 0x{} param={}", Integer.toHexString(cmd), param);
+        log.debug("{}: TCP command 0x{} param={}", socket.getRemoteSocketAddress(), Integer.toHexString(cmd), param);
         try {
             switch (cmd) {
                 case CMD_SET_FREQUENCY        -> sdrService.setFrequency(Integer.toUnsignedLong(param));
@@ -170,7 +187,7 @@ public class RtlTcpClientHandler implements Runnable {
                 default -> log.warn("Unknown TCP command: 0x{}", Integer.toHexString(cmd));
             }
         } catch (Exception e) {
-            log.warn("Command 0x{} failed: {}", Integer.toHexString(cmd), e.getMessage());
+            log.warn("{}: Command 0x{} failed: {}", socket.getRemoteSocketAddress(), Integer.toHexString(cmd), e.getMessage());
         }
     }
 
@@ -181,5 +198,6 @@ public class RtlTcpClientHandler implements Runnable {
         }
         try { socket.close(); } catch (IOException ignored) {}
         onDisconnect.accept(this);
+        log.debug("{}: Client disconnected", socket.getRemoteSocketAddress());
     }
 }

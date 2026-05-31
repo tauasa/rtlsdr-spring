@@ -1,5 +1,5 @@
 server:
-  port: 8080 # 8443 when SSL is enabled
+  port: 8080 # 8443
   ssl:
     enabled: false                          # flip to true once certificate is in place
     key-store: classpath:keystore.p12       # or file:/path/to/keystore.p12
@@ -11,10 +11,16 @@ spring:
   mvc:
     cors:
       allowed-origins: "*"
-      
+
 rtlsdr:
   # Set to 0 (or device index) to open on startup; -1 = manual open via REST
-  device-index: 0   
+  device-index: 0
+
+  # If librtlsdr lives in a non-standard location, override the JNA search path:
+  # Run with: java -Djna.library.path=/path/to/lib -jar rtlsdr-spring.jar
+  # e.g. macOS brew (Apple Silicon): /opt/homebrew/lib
+  # e.g. macOS brew (Intel):         /usr/local/lib
+  # e.g. Linux custom build:         /usr/local/lib
 
   # rtl_tcp-compatible TCP server
   tcp-port: 1234
@@ -31,6 +37,26 @@ rtlsdr:
   async-buffer-length-bytes: 0
 
 logging:
+  # ── Log levels ──────────────────────────────────────────────────────────────
   level:
-    org.tauasa.apps.rtlsdr: DEBUG
-    root: INFO
+    root:                        INFO
+    org.tauasa.apps.rtlsdr:     TRACE
+
+  # ── File output ─────────────────────────────────────────────────────────────
+  file:
+    name: /var/log/rtlsdr-spring.log   # written relative to the working directory
+
+  logback:
+    rollingpolicy:
+      # Keep 14 daily archives, cap total size at 1 GB
+      max-history:       14
+      max-file-size:     50MB
+      total-size-cap:    1GB
+      # Archive name pattern — rotates at midnight
+      file-name-pattern: rtlsdr-spring.%d{yyyy-MM-dd}.%i.log.gz
+
+  # ── Console pattern ─────────────────────────────────────────────────────────
+  pattern:
+    # console: "%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%xwEx"
+    # File uses plain text (no ANSI colour codes)
+    file:    "%d{yyyy-MM-dd HH:mm:ss.SSS} %5p --- [%t] %-40.40logger{39} : %m%n%xwEx"

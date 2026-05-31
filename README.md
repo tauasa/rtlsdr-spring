@@ -8,7 +8,7 @@ all from one JVM process.
 
 ## Architecture
 
-![Alt text](architecture.png)
+![Alt text](img/architecture.png)
 
 ---
 
@@ -183,6 +183,30 @@ rtlsdr:
   async-buffer-count: 0          # 0 = librtlsdr default (32)
   async-buffer-length-bytes: 0   # 0 = librtlsdr default (16384)
 ```
+
+---
+
+## Control Panel
+
+The Control Panel is located at: 
+`http://[host][:port]/rtlsdr-client.html`
+
+Replace `host` with your host name/IP and `port` with the value located in `application.yml` (i.e. `http://localhost:8080/rtlsdr-client.html`).
+
+### Dashboard
+![Dashboard](img/rtlsdr-spring-dashboard.png)
+### Tuner
+![Tuner](img/rtlsdr-spring-tuner.png)
+### Streaming
+![Streaming](img/rtlsdr-spring-streaming.png)
+### Devices
+![Devices](img/rtlsdr-spring-devices.png)
+### Network
+![Network](img/rtlsdr-spring-network.png)
+### Settings
+![Settings](img/rtlsdr-spring-settings.png)
+
+Source for the Control Panel is located at `src/main/resources/static/rtlsdr-client.html`
 
 ---
 
