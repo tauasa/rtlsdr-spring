@@ -1,6 +1,6 @@
 # rtlsdr-spring
 
-A **Java 21 / Spring Boot 3** implementation of `rtl_tcp` — control your RTL-SDR
+A **Java 21 / Spring Boot 4** implementation of `rtl_tcp` — control your RTL-SDR
 dongle over a REST API, WebSocket IQ stream, and the original rtl\_tcp wire protocol,
 all from a single JVM process.
 

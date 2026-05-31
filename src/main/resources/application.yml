@@ -44,7 +44,7 @@ logging:
 
   # ── File output ─────────────────────────────────────────────────────────────
   file:
-    name: /var/log/rtlsdr-spring.log   # written relative to the working directory
+    name: /var/log/rtlsdr-spring/rtlsdr-spring.log
 
   logback:
     rollingpolicy:
