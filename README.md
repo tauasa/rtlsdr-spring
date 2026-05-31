@@ -2,7 +2,7 @@
 
 A **Java 21 / Spring Boot 3** implementation of `rtl_tcp` — control your RTL-SDR
 dongle over a REST API, WebSocket IQ stream, and the original rtl\_tcp wire protocol,
-all from one JVM process.
+all from a single JVM process.
 
 ---
 
@@ -66,7 +66,7 @@ rtlsdr:
 
 ## REST API
 
-All endpoints return JSON. Base URL: `http://localhost:8080/api`
+All endpoints return JSON. Base URL: `http://{host}{port}/api`
 
 | Method | Path | Description |
 |--------|------|-------------|
@@ -112,7 +112,7 @@ curl -s -X POST http://localhost:8080/api/device/stream/start
 
 ## rtl\_tcp Protocol (port 1234)
 
-Connect any `rtl_tcp`-aware client (SDR#, GQRX, SDR++, GNU Radio) to
+Connect any `rtl_tcp`-aware client ([SDR#](https://airspy.com/download/), [GQRX](https://www.gqrx.dk), [SDR++](https://www.sdrpp.org), [GNU Radio](https://www.gnuradio.org)) to
 `localhost:1234`. The server speaks the identical binary protocol:
 
 1. **On connect**: server sends 12-byte dongle-info header  
