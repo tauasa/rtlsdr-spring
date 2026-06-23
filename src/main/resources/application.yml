@@ -27,7 +27,7 @@ rtlsdr:
   tcp-auto-start: true
 
   # Initial tuner settings (applied when the device is opened)
-  initial-frequency-hz: 100000000       # 100 MHz
+  initial-frequency-hz: 90900000       # 90.9 MHz
   initial-sample-rate-hz: 2048000       # 2.048 Msps — standard SDR rate
   initial-gain-tenths-db: -1              # -1 = auto-gain
 
@@ -40,7 +40,7 @@ logging:
   # ── Log levels ──────────────────────────────────────────────────────────────
   level:
     root:                        INFO
-    org.tauasa.apps.rtlsdr:     TRACE
+    org.tauasa.apps.rtlsdr:     DEBUG
 
   # ── File output ─────────────────────────────────────────────────────────────
   file:
