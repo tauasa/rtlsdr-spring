@@ -33,8 +33,8 @@ rtlsdr:
 
   # librtlsdr async transfer buffers
   # 0 = use librtlsdr defaults (32 buffers × 16384 bytes each)
-  async-buffer-count: 0
-  async-buffer-length-bytes: 0
+  async-buffer-count: 32
+  async-buffer-length-bytes: 16384
 
 logging:
   # ── Log levels ──────────────────────────────────────────────────────────────
