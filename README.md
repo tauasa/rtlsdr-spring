@@ -1,6 +1,6 @@
 # rtlsdr-spring
 
-A **Java 21 / Spring Boot 4** implementation of `rtl_tcp` — control your RTL-SDR dongle over a REST API, WebSocket IQ stream, and the original rtl\_tcp wire protocol, all from a single JVM process.
+A **Java 21 / Spring Boot 4** implementation of `rtl_tcp` — control your RTL-SDR dongle over a REST API, WebSocket IQ stream, and the original rtl_tcp wire protocol, all from a single JVM process.
 
 ---
 
@@ -165,6 +165,7 @@ Connect any `rtl_tcp`-aware client ([SDR#](https://airspy.com/download/), [GQRX]
 
 Connect with any WebSocket client. Frames are **binary** and contain the same
 raw IQ bytes as the TCP stream.
+
 
 ```javascript
 // Browser example

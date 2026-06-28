@@ -40,7 +40,7 @@ logging:
   # ── Log levels ──────────────────────────────────────────────────────────────
   level:
     root:                        INFO
-    org.tauasa.apps.rtlsdr:     DEBUG
+    org.tauasa.apps.rtlsdr:     TRACE
 
   # ── File output ─────────────────────────────────────────────────────────────
   file:
